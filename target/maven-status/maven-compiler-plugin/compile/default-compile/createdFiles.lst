@@ -1,0 +1,17 @@
+com\fraud_detector\project\service\impl\ItemServiceImpl.class
+com\fraud_detector\project\repository\ItemRepository.class
+com\fraud_detector\project\dto\ItemRequestDTO.class
+com\fraud_detector\project\config\OpenApiConfig.class
+com\fraud_detector\project\model\Item.class
+com\fraud_detector\project\exception\ApiError.class
+com\fraud_detector\project\mapper\ItemMapperImpl.class
+com\fraud_detector\project\ProjetoApplication.class
+com\fraud_detector\project\model\Item$ItemBuilder.class
+com\fraud_detector\project\dto\ItemResponseDTO.class
+com\fraud_detector\project\config\CorsConfig.class
+com\fraud_detector\project\exception\GlobalExceptionHandler.class
+com\fraud_detector\project\config\CorsConfig$1.class
+com\fraud_detector\project\exception\ResourceNotFoundException.class
+com\fraud_detector\project\mapper\ItemMapper.class
+com\fraud_detector\project\controller\ItemController.class
+com\fraud_detector\project\service\ItemService.class

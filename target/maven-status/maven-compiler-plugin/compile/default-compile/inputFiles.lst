@@ -1,0 +1,14 @@
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\config\CorsConfig.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\config\OpenApiConfig.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\controller\ItemController.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\dto\ItemRequestDTO.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\dto\ItemResponseDTO.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\exception\ApiError.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\exception\GlobalExceptionHandler.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\exception\ResourceNotFoundException.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\mapper\ItemMapper.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\model\Item.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\ProjetoApplication.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\repository\ItemRepository.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\service\impl\ItemServiceImpl.java
+C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\service\ItemService.java

@@ -1,2 +1,2 @@
 # fraud-detector
-Sistema de processamento assíncrono de transações utilizando Java, AWS Lambda, DynamoDB, SQS e SNS. A aplicação recebe transações via API, processa eventos de forma desacoplada e realiza validações com base no histórico do usuário, enviando notificações para transações suspeitas.
+Asynchronous transaction processing system using Java, AWS Lambda, DynamoDB, SQS, and SNS. The application receives transactions via API, processes events in a decoupled manner, and performs validations based on user history, sending notifications for suspicious transactions.
