@@ -64,20 +64,29 @@ Swagger UI is available at `http://localhost:8080/docs` while the app is running
 
 ## Package structure (MVC)
 
+Base package: `com.fraud_detector.project`. Every class lives under
+`src/main/java/com/fraud_detector/project/`, and the tests mirror it under
+`src/test/java/com/fraud_detector/project/`.
+
 ```
-src/main/java/com/frauddetector/project/
-├── config/         # Configuration beans (CORS, OpenAPI, AWS SDK clients — DynamoDB/SQS, Security, etc.)
-├── controller/      # REST controllers — orchestration only, no business logic
-├── service/         # Service interfaces (contracts)
-│   └── impl/         # Implementations
-├── repository/       # DynamoDB access (AWS SDK v2 Enhanced Client), one class per table/entity
-├── model/            # DynamoDB item classes (@DynamoDbBean)
-├── dto/              # Input/output records (Request/Response)
-├── mapper/           # MapStruct interfaces (Model <-> DTO)
-├── messaging/         # SQS producer(s) — builds and sends transaction events
-├── exception/         # Custom exceptions + GlobalExceptionHandler
-└── security/          # Authentication/authorization (when applicable)
+com.fraud_detector.project/
+├── config/            # Configuration beans (CORS, OpenAPI, AWS SDK clients — DynamoDB/SQS, Security, etc.)
+├── controller/         # REST controllers — orchestration only, no business logic
+├── service/            # Service interfaces (contracts)
+│   └── impl/            # Implementations
+├── repository/          # DynamoDB access (AWS SDK v2 Enhanced Client), one class per table/entity
+├── model/               # DynamoDB item classes (@DynamoDbBean)
+├── dto/                 # Input/output records (Request/Response)
+│   ├── request/          # Request DTOs (validated with Bean Validation)
+│   └── response/         # Response DTOs
+├── enums/               # Enumerations shared across domain (Channel, PaymentMethod, etc.)
+├── mapper/              # MapStruct interfaces (Model <-> DTO)
+├── exception/           # Custom exceptions + GlobalExceptionHandler
+└── security/            # Authentication/authorization (when applicable)
 ```
+
+Note: the base package uses an underscore (`com.fraud_detector.project`) to match
+the repository/project naming — don't "fix" it to `com.frauddetector.project`.
 
 ## Project conventions
 
