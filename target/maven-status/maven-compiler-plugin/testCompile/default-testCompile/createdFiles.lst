@@ -1,2 +1,5 @@
+com\fraud_detector\project\service\impl\TransactionServiceImplTest.class
+com\fraud_detector\project\controller\UserControllerTest.class
 com\fraud_detector\project\ProjetoApplicationTests.class
-com\empresa\projeto\ProjetoApplicationTests.class
+com\fraud_detector\project\service\impl\UserServiceImplTest.class
+com\fraud_detector\project\controller\TransactionControllerTest.class

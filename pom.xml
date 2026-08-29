@@ -11,17 +11,33 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.fraud_detector.project</groupId>
-    <artifactId>fraud-detector</artifactId>
+    <groupId>com.frauddetector.project</groupId>
+    <artifactId>fraud-detector-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>fraud-detector</name>
-    <description>Projeto Spring Boot - Java 21</description>
+    <name>fraud-detector-api</name>
+    <description>API REST do fraud-detector: valida transações, gerencia usuários e publica eventos de transação no SQS. Não contém lógica de detecção de fraude — ver fraud-detector-lambda.</description>
 
     <properties>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <aws-sdk-v2.version>2.28.11</aws-sdk-v2.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- BOM do AWS SDK v2 — fixa a versão consistente entre todos os
+                 módulos software.amazon.awssdk:* usados abaixo, sem precisar
+                 declarar <version> em cada dependência individualmente. -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-sdk-v2.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Web -->
@@ -36,30 +52,16 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Persistência JPA -->
+        <!-- AWS SDK v2 — DynamoDB Enhanced Client (persistência) -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb-enhanced</artifactId>
         </dependency>
 
-        <!-- Banco em memória para dev/testes -->
+        <!-- AWS SDK v2 — SQS (publicação de eventos de transação) -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Driver PostgreSQL (ajuste/remova conforme o banco real) -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Migrations -->
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
 
         <!-- Lombok -->
@@ -69,7 +71,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- MapStruct para mapeamento DTO <-> Entity -->
+        <!-- MapStruct para mapeamento DTO <-> Model -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>

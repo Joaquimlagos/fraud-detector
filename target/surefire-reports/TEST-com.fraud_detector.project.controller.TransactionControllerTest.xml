@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.fraud_detector.project.ProjetoApplicationTests" time="1.139" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.fraud_detector.project.controller.TransactionControllerTest" time="3.159" tests="2" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -65,10 +65,11 @@
     <property name="java.class.version" value="65.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[fraud-detector] "/>
   </properties>
-  <testcase name="contextLoads" classname="com.fraud_detector.project.ProjetoApplicationTests" time="0.001">
-    <system-out><![CDATA[2026-08-29T15:07:42.310-03:00  INFO 16212 --- [fraud-detector] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.fraud_detector.project.ProjetoApplicationTests]: ProjetoApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-2026-08-29T15:07:42.319-03:00  INFO 16212 --- [fraud-detector] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.fraud_detector.project.ProjetoApplication for test class com.fraud_detector.project.ProjetoApplicationTests
-2026-08-29T15:07:42.327-03:00  INFO 16212 --- [fraud-detector] [           main] o.s.b.d.r.RestartApplicationListener     : Restart disabled due to context in which it is running
+  <testcase name="shouldReturnBadRequestWhenFieldsAreMissing" classname="com.fraud_detector.project.controller.TransactionControllerTest" time="0.288">
+    <system-out><![CDATA[Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+15:07:38.929 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.fraud_detector.project.controller.TransactionControllerTest]: TransactionControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+15:07:39.054 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.fraud_detector.project.ProjetoApplication for test class com.fraud_detector.project.controller.TransactionControllerTest
+15:07:39.114 [main] INFO org.springframework.boot.devtools.restart.RestartApplicationListener -- Restart disabled due to context in which it is running
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -79,10 +80,19 @@
 
  :: Spring Boot ::                (v3.3.4)
 
-2026-08-29T15:07:42.352-03:00  INFO 16212 --- [fraud-detector] [           main] c.f.project.ProjetoApplicationTests      : Starting ProjetoApplicationTests using Java 21.0.12 with PID 16212 (started by Joaquim in C:\Users\Joaquim\Documents\fraud-detector)
-2026-08-29T15:07:42.352-03:00 DEBUG 16212 --- [fraud-detector] [           main] c.f.project.ProjetoApplicationTests      : Running with Spring Boot v3.3.4, Spring v6.1.13
-2026-08-29T15:07:42.352-03:00  INFO 16212 --- [fraud-detector] [           main] c.f.project.ProjetoApplicationTests      : The following 1 profile is active: "dev"
-2026-08-29T15:07:43.444-03:00  INFO 16212 --- [fraud-detector] [           main] c.f.project.ProjetoApplicationTests      : Started ProjetoApplicationTests in 1.117 seconds (process running for 5.067)
+2026-08-29T15:07:39.395-03:00  INFO 16212 --- [fraud-detector] [           main] c.f.p.c.TransactionControllerTest        : Starting TransactionControllerTest using Java 21.0.12 with PID 16212 (started by Joaquim in C:\Users\Joaquim\Documents\fraud-detector)
+2026-08-29T15:07:39.396-03:00 DEBUG 16212 --- [fraud-detector] [           main] c.f.p.c.TransactionControllerTest        : Running with Spring Boot v3.3.4, Spring v6.1.13
+2026-08-29T15:07:39.396-03:00  INFO 16212 --- [fraud-detector] [           main] c.f.p.c.TransactionControllerTest        : The following 1 profile is active: "dev"
+2026-08-29T15:07:41.564-03:00  INFO 16212 --- [fraud-detector] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-08-29T15:07:41.564-03:00  INFO 16212 --- [fraud-detector] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-08-29T15:07:41.567-03:00  INFO 16212 --- [fraud-detector] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-08-29T15:07:41.590-03:00  INFO 16212 --- [fraud-detector] [           main] c.f.p.c.TransactionControllerTest        : Started TransactionControllerTest in 2.486 seconds (process running for 3.213)
 ]]></system-out>
+    <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\Joaquim\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.19\byte-buddy-agent-1.14.19.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
   </testcase>
+  <testcase name="shouldReturnAcceptedWhenTransactionIsValid" classname="com.fraud_detector.project.controller.TransactionControllerTest" time="0.059"/>
 </testsuite>
