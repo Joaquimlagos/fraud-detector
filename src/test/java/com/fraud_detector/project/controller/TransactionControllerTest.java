@@ -15,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -37,8 +36,7 @@ class TransactionControllerTest {
 
     @Test
     void shouldReturnAcceptedWhenTransactionIsValid() throws Exception {
-        String transactionId = UUID.randomUUID().toString();
-        TransactionResponseDTO response = TransactionResponseDTO.accepted(transactionId);
+        TransactionResponseDTO response = TransactionResponseDTO.success();
 
         when(transactionService.submit(any())).thenReturn(response);
 
@@ -63,8 +61,7 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.transactionId").value(transactionId))
-                .andExpect(jsonPath("$.status").value("PENDING_ANALYSIS"));
+                .andExpect(jsonPath("$.message").value("Transaction registered successfully"));
     }
 
     @Test

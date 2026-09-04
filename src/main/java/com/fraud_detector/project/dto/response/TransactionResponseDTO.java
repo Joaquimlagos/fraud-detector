@@ -1,10 +1,9 @@
 package com.fraud_detector.project.dto.response;
 
 public record TransactionResponseDTO(
-        String transactionId,
-        String status
+        String message
 ) {
-    public static TransactionResponseDTO accepted(String transactionId) {
-        return new TransactionResponseDTO(transactionId, "PENDING_ANALYSIS");
+    public static TransactionResponseDTO success() {
+        return new TransactionResponseDTO("Transaction registered successfully");
     }
 }

@@ -1,7 +1,5 @@
-com\fraud_detector\project\config\OpenApiConfig.class
 com\fraud_detector\project\dto\response\TransactionResponseDTO.class
 com\fraud_detector\project\ProjetoApplication.class
-com\fraud_detector\project\config\CorsConfig.class
 com\fraud_detector\project\exception\GlobalExceptionHandler.class
 com\fraud_detector\project\dto\request\UserRequestDTO.class
 com\fraud_detector\project\mapper\UserMapperImpl.class
@@ -15,7 +13,6 @@ com\fraud_detector\project\controller\UserController.class
 com\fraud_detector\project\dto\response\UserResponseDTO.class
 com\fraud_detector\project\service\TransactionService.class
 com\fraud_detector\project\controller\TransactionController.class
-com\fraud_detector\project\config\CorsConfig$1.class
 com\fraud_detector\project\enums\Channel.class
 com\fraud_detector\project\service\impl\TransactionServiceImpl.class
 com\fraud_detector\project\mapper\UserMapper.class

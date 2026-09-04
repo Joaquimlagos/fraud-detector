@@ -1,7 +1,5 @@
 C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\config\AwsConfig.java
-C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\config\CorsConfig.java
 C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\config\DynamoDbConfig.java
-C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\config\OpenApiConfig.java
 C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\controller\TransactionController.java
 C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\controller\UserController.java
 C:\Users\Joaquim\Documents\fraud-detector\src\main\java\com\fraud_detector\project\dto\request\TransactionRequestDTO.java

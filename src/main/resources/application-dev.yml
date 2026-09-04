@@ -1,19 +1,18 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:devdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  flyway:
-    enabled: false
+  application:
+    name: fraud-detector-dev
+
+aws:
+  region: us-east-1
+  access-key-id: test
+  secret-access-key: test
+  sqs:
+    endpoint: http://localhost:4566
+    queue-name: fraud-detector-transaction-queue-dev
+  dynamodb:
+    endpoint: http://localhost:4566
+    users-table: fraud-detector-users-dev
+    transactions-table: fraud-detector-transactions-dev
 
 logging:
   level:

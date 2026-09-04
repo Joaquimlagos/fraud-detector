@@ -1,13 +1,18 @@
 spring:
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
+  application:
+    name: fraud-detector-prod
+
+aws:
+  region: ${AWS_REGION}
+  access-key-id: ${AWS_ACCESS_KEY_ID}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+  sqs:
+    endpoint: ${SQS_ENDPOINT}
+    queue-name: fraud-detector-transaction-queue-prod
+  dynamodb:
+    endpoint: ${DYNAMODB_ENDPOINT}
+    users-table: fraud-detector-users-prod
+    transactions-table: fraud-detector-transactions-prod
 
 logging:
   level:
