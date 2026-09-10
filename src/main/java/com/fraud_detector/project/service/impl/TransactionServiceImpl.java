@@ -1,72 +1,62 @@
 package com.fraud_detector.project.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
-import com.fraud_detector.project.dto.response.TransactionResponseDTO;
+import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
+import com.fraud_detector.project.enums.Channel;
+import com.fraud_detector.project.enums.PaymentMethod;
+import com.fraud_detector.project.messaging.TransactionEvent;
+import com.fraud_detector.project.messaging.TransactionEventPublisher;
 import com.fraud_detector.project.service.TransactionService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+import java.time.Instant;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
-    private final SqsClient sqsClient;
-    private final ObjectMapper objectMapper;
-
-    @Value("${aws.sqs.queue-name}")
-    private String queueName;
-
-    private volatile String cachedQueueUrl;
+    private final TransactionEventPublisher publisher;
 
     @Override
-    public TransactionResponseDTO submit(TransactionRequestDTO dto) {
+    public TransactionAcceptedResponseDTO submit(TransactionRequestDTO dto) {
         String transactionId = UUID.randomUUID().toString();
 
-        try {
-            String payloadJson = objectMapper.writeValueAsString(dto);
-            String queueUrl = getQueueUrl();
+        TransactionEvent event = toEvent(transactionId, dto);
+        publisher.publish(event);
 
-            SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
-                    .queueUrl(queueUrl)
-                    .messageBody(payloadJson)
-                    .build();
-
-            sqsClient.sendMessage(sendMessageRequest);
-            log.info("Transaction {} successfully published to SQS queue {}", transactionId, queueName);
-
-        } catch (JsonProcessingException e) {
-            log.error("Error serializing transaction object: ", e);
-            throw new RuntimeException("Failed to process transaction payload", e);
-        } catch (Exception e) {
-            log.error("Error sending message to SQS queue: ", e);
-            throw new RuntimeException("Failed to publish transaction to SQS", e);
-        }
-
-        return TransactionResponseDTO.success();
+        return TransactionAcceptedResponseDTO.accepted(transactionId);
     }
 
-    private String getQueueUrl() {
-        if (cachedQueueUrl == null) {
-            synchronized (this) {
-                if (cachedQueueUrl == null) {
-                    cachedQueueUrl = sqsClient.getQueueUrl(
-                            GetQueueUrlRequest.builder()
-                                    .queueName(queueName)
-                                    .build()
-                    ).queueUrl();
-                }
-            }
-        }
-        return cachedQueueUrl;
+    private TransactionEvent toEvent(String transactionId, TransactionRequestDTO dto) {
+        return new TransactionEvent(
+                transactionId,
+                dto.userId(),
+                dto.amount(),
+                dto.currency(),
+                dto.merchant(),
+                dto.merchantCategory(),
+                paymentMethod(dto),
+                dto.cardLastFourDigits(),
+                channel(dto),
+                dto.ipAddress(),
+                dto.deviceId(),
+                dto.latitude(),
+                dto.longitude(),
+                dto.billingCountry(),
+                dto.occurredAt(),
+                Instant.now()
+        );
+    }
+
+    private String paymentMethod(TransactionRequestDTO dto) {
+        PaymentMethod method = dto.paymentMethod();
+        return method == null ? null : method.name();
+    }
+
+    private String channel(TransactionRequestDTO dto) {
+        Channel channel = dto.channel();
+        return channel == null ? null : channel.name();
     }
 }

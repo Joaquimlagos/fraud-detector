@@ -2,9 +2,9 @@ package com.fraud_detector.project.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
+import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
 import com.fraud_detector.project.enums.Channel;
 import com.fraud_detector.project.enums.PaymentMethod;
-import com.fraud_detector.project.dto.response.TransactionResponseDTO;
 import com.fraud_detector.project.service.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -36,7 +37,8 @@ class TransactionControllerTest {
 
     @Test
     void shouldReturnAcceptedWhenTransactionIsValid() throws Exception {
-        TransactionResponseDTO response = TransactionResponseDTO.success();
+        String transactionId = UUID.randomUUID().toString();
+        TransactionAcceptedResponseDTO response = TransactionAcceptedResponseDTO.accepted(transactionId);
 
         when(transactionService.submit(any())).thenReturn(response);
 
@@ -61,7 +63,8 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.message").value("Transaction registered successfully"));
+                .andExpect(jsonPath("$.transactionId").value(transactionId))
+                .andExpect(jsonPath("$.status").value("PENDING_ANALYSIS"));
     }
 
     @Test

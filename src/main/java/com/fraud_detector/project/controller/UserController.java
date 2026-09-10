@@ -1,6 +1,7 @@
 package com.fraud_detector.project.controller;
 
 import com.fraud_detector.project.dto.request.UserRequestDTO;
+import com.fraud_detector.project.dto.response.UserHistoryResponseDTO;
 import com.fraud_detector.project.dto.response.UserResponseDTO;
 import com.fraud_detector.project.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,10 +29,10 @@ public class UserController {
         return ResponseEntity.created(URI.create("/api/v1/users/" + created.userId())).body(created);
     }
 
-    @GetMapping("/{userId}")
-    @Operation(summary = "Finds a user by id")
-    public ResponseEntity<UserResponseDTO> findById(@PathVariable String userId) {
-        return ResponseEntity.ok(userService.findById(userId));
+    @GetMapping("/history/{userId}")
+    @Operation(summary = "Returns the user profile and all their transactions")
+    public ResponseEntity<UserHistoryResponseDTO> findHistory(@PathVariable String userId) {
+        return ResponseEntity.ok(userService.findHistory(userId));
     }
 
     @DeleteMapping("/{userId}")

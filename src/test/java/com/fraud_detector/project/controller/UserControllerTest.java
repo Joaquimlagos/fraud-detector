@@ -2,6 +2,8 @@ package com.fraud_detector.project.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fraud_detector.project.dto.request.UserRequestDTO;
+import com.fraud_detector.project.dto.response.TransactionItemDTO;
+import com.fraud_detector.project.dto.response.UserHistoryResponseDTO;
 import com.fraud_detector.project.dto.response.UserResponseDTO;
 import com.fraud_detector.project.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -11,8 +13,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -115,27 +119,38 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldFindUserById() throws Exception {
+    void shouldFindUserHistory() throws Exception {
         String userId = UUID.randomUUID().toString();
-        UserResponseDTO response = new UserResponseDTO(
-                userId, "John Doe", "john@example.com", "12345678901",
-                "+5511999999999", LocalDate.of(1990, 1, 1), "BR", Instant.now(), Instant.now()
+        TransactionItemDTO transaction = new TransactionItemDTO(
+                UUID.randomUUID().toString(), userId, new BigDecimal("100.00"), "USD", "Acme Store",
+                "ECOM", "CREDIT_CARD", "1234", "ONLINE", "192.168.0.1", "device-1",
+                40.7128, -74.0060, "BR", "APPROVED", List.of("low amount anomaly"),
+                Instant.parse("2024-01-01T10:01:00Z"), Instant.parse("2024-01-01T10:00:00Z"),
+                Instant.parse("2024-01-01T10:05:00Z")
+        );
+        UserHistoryResponseDTO response = new UserHistoryResponseDTO(
+                userId, "John Doe", List.of(transaction)
         );
 
-        when(userService.findById(userId)).thenReturn(response);
+        when(userService.findHistory(userId)).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/users/" + userId))
+        mockMvc.perform(get("/api/v1/users/history/" + userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(userId))
-                .andExpect(jsonPath("$.fullName").value("John Doe"));
+                .andExpect(jsonPath("$.name").value("John Doe"))
+                .andExpect(jsonPath("$.transactions[0].transactionId").value(transaction.transactionId()))
+                .andExpect(jsonPath("$.transactions[0].amount").value(100.00))
+                .andExpect(jsonPath("$.transactions[0].status").value("APPROVED"))
+                .andExpect(jsonPath("$.transactions[0].reasons[0]").value("low amount anomaly"))
+                .andExpect(jsonPath("$.transactions[0].analyzedAt").value("2024-01-01T10:01:00Z"));
     }
 
     @Test
-    void shouldReturn404WhenUserNotFound() throws Exception {
+    void shouldReturn404WhenUserHistoryNotFound() throws Exception {
         String userId = UUID.randomUUID().toString();
-        when(userService.findById(userId)).thenThrow(new com.fraud_detector.project.exception.ResourceNotFoundException("User not found"));
+        when(userService.findHistory(userId)).thenThrow(new com.fraud_detector.project.exception.ResourceNotFoundException("User not found"));
 
-        mockMvc.perform(get("/api/v1/users/" + userId))
+        mockMvc.perform(get("/api/v1/users/history/" + userId))
                 .andExpect(status().isNotFound());
     }
 

@@ -1,7 +1,7 @@
 package com.fraud_detector.project.controller;
 
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
-import com.fraud_detector.project.dto.response.TransactionResponseDTO;
+import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
 import com.fraud_detector.project.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,8 +24,8 @@ public class TransactionController {
 
     @PostMapping
     @Operation(summary = "Submits a transaction for fraud analysis")
-    public ResponseEntity<TransactionResponseDTO> submit(@Valid @RequestBody TransactionRequestDTO dto) {
-        TransactionResponseDTO accepted = transactionService.submit(dto);
+    public ResponseEntity<TransactionAcceptedResponseDTO> submit(@Valid @RequestBody TransactionRequestDTO dto) {
+        TransactionAcceptedResponseDTO accepted = transactionService.submit(dto);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(accepted);
     }
 }

@@ -1,46 +1,38 @@
 package com.fraud_detector.project.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
+import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
 import com.fraud_detector.project.enums.Channel;
 import com.fraud_detector.project.enums.PaymentMethod;
-import com.fraud_detector.project.dto.response.TransactionResponseDTO;
+import com.fraud_detector.project.messaging.TransactionEvent;
+import com.fraud_detector.project.messaging.TransactionEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceImplTest {
 
     @Mock
-    private SqsClient sqsClient;
-
-    @Spy
-    private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private TransactionEventPublisher publisher;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
 
     @Test
-    void shouldReturnSuccessMessageWhenTransactionPublished() {
+    void shouldPublishEventWithAllDtoFieldsMapped() {
+        Instant occurredAt = Instant.parse("2026-09-09T14:00:00Z");
         TransactionRequestDTO request = new TransactionRequestDTO(
                 "user-123",
                 new BigDecimal("100.50"),
@@ -55,25 +47,40 @@ class TransactionServiceImplTest {
                 -23.5505,
                 -46.6333,
                 "BR",
-                Instant.now()
+                occurredAt
         );
 
-        when(sqsClient.getQueueUrl(any(GetQueueUrlRequest.class)))
-                .thenReturn(GetQueueUrlResponse.builder()
-                        .queueUrl("http://localhost:4566/000000000000/queue-name")
-                        .build());
-        when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-                .thenReturn(SendMessageResponse.builder().build());
+        TransactionAcceptedResponseDTO response = transactionService.submit(request);
 
-        TransactionResponseDTO response = transactionService.submit(request);
+        ArgumentCaptor<TransactionEvent> captor = ArgumentCaptor.forClass(TransactionEvent.class);
+        verify(publisher).publish(captor.capture());
+        TransactionEvent event = captor.getValue();
 
-        assertNotNull(response);
-        assertEquals("Transaction registered successfully", response.message());
-        verify(sqsClient).sendMessage(any(SendMessageRequest.class));
+        assertNotNull(event.transactionId());
+        assertNotNull(UUID.fromString(event.transactionId()));
+        assertEquals(request.userId(), event.userId());
+        assertEquals(request.amount(), event.amount());
+        assertEquals(request.currency(), event.currency());
+        assertEquals(request.merchant(), event.merchant());
+        assertEquals(request.merchantCategory(), event.merchantCategory());
+        assertEquals(request.paymentMethod().name(), event.paymentMethod());
+        assertEquals(request.cardLastFourDigits(), event.cardLastFourDigits());
+        assertEquals(request.channel().name(), event.channel());
+        assertEquals(request.ipAddress(), event.ipAddress());
+        assertEquals(request.deviceId(), event.deviceId());
+        assertEquals(request.latitude(), event.latitude());
+        assertEquals(request.longitude(), event.longitude());
+        assertEquals(request.billingCountry(), event.billingCountry());
+        assertEquals(occurredAt, event.occurredAt());
+        assertNotNull(event.publishedAt());
+
+        assertNotNull(response.transactionId());
+        assertEquals(event.transactionId(), response.transactionId());
+        assertEquals("PENDING_ANALYSIS", response.status());
     }
 
     @Test
-    void shouldPublishEachRequestToSqs() {
+    void shouldGenerateDifferentTransactionIdPerSubmission() {
         TransactionRequestDTO request = new TransactionRequestDTO(
                 "user-123",
                 new BigDecimal("100.50"),
@@ -91,21 +98,11 @@ class TransactionServiceImplTest {
                 Instant.now()
         );
 
-        when(sqsClient.getQueueUrl(any(GetQueueUrlRequest.class)))
-                .thenReturn(GetQueueUrlResponse.builder()
-                        .queueUrl("http://localhost:4566/000000000000/queue-name")
-                        .build());
-        when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-                .thenReturn(SendMessageResponse.builder().build());
+        TransactionAcceptedResponseDTO first = transactionService.submit(request);
+        TransactionAcceptedResponseDTO second = transactionService.submit(request);
 
-        TransactionResponseDTO response1 = transactionService.submit(request);
-        TransactionResponseDTO response2 = transactionService.submit(request);
-
-        assertNotNull(response1);
-        assertNotNull(response2);
-        assertEquals("Transaction registered successfully", response1.message());
-        assertEquals("Transaction registered successfully", response2.message());
-
-        verify(sqsClient, org.mockito.Mockito.times(2)).sendMessage(any(SendMessageRequest.class));
+        assertNotNull(first.transactionId());
+        assertNotNull(second.transactionId());
+        org.junit.jupiter.api.Assertions.assertNotEquals(first.transactionId(), second.transactionId());
     }
 }
