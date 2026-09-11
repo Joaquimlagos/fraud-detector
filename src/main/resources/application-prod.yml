@@ -13,6 +13,9 @@ aws:
     endpoint: ${DYNAMODB_ENDPOINT}
     users-table: fraud-detector-users-prod
     transactions-table: fraud-detector-transactions-prod
+  lambda:
+    endpoint: ${LAMBDA_ENDPOINT:}
+    function-name: fraud-detector-analysis-prod
 
 logging:
   level:

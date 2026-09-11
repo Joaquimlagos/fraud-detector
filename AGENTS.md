@@ -9,7 +9,7 @@ Context guide for AI agents (opencode, Claude Code, etc.) working in this reposi
 ## Overview
 
 Project: **fraud-detector-api**
-Scope: **this repository is the API only.** It exposes REST endpoints, manages users, and publishes transaction events to SQS. It does **not** contain fraud-detection logic.
+Scope: **this repository is the API only.** It exposes REST endpoints, manages users, publishes transaction events to SQS, and queries the fraud-analysis Lambda **synchronously** for detailed results. It does **not** contain fraud-detection logic.
 Stack: Java 21, Spring Boot 3.3.4, Maven, MVC architecture.
 Database: DynamoDB (AWS SDK v2, DynamoDB Enhanced Client) — no relational database, no JPA/Hibernate, no Flyway.
 
@@ -19,19 +19,28 @@ This is one piece of a larger event-driven system. The other piece — the fraud
 
 ```
 [this repo]                          [separate Python repo]
-API (Spring Boot) ──publishes──▶ SQS ──consumes──▶ Lambda (fraud rules engine)
-   │                                                    │
-   ├─ create-user / delete-user ──▶ DynamoDB (users)     ├─ reads history ──▶ DynamoDB
-   │                                                    ├─ writes result ──▶ DynamoDB (transactions, always — every status)
-   └─ /transaction ──▶ publishes raw payload to SQS       └─ if SUSPICIOUS ──▶ SNS ──▶ email
+API (Spring Boot)                    Lambda (fraud analysis engine)
+   │
+   ├─ create-user / delete-user ──▶ DynamoDB (users)
+   │
+   ├─ POST /transactions ──publish──▶ SQS ──consumes──▶ Lambda (Flow 1: general validation + scoring)
+   │                                                       │
+   │                                                       ├─ reads history ──▶ DynamoDB
+   │                                                       ├─ writes result ──▶ DynamoDB (transactions, always — every status)
+   │                                                       └─ if SUSPICIOUS ──▶ SNS ──▶ email
+   │
+   └─ GET /transactions/{id}/analysis ──sync invoke────▶ Lambda (Flow 2: RAG + LLM detailed analysis)
+                                    ◀── analysis JSON ───
 ```
 
 Key decisions from architecture review (see conversation history / update this section if they change):
 - **The API never decides whether a transaction is suspicious.** It only validates the request shape (required fields, types) and publishes to SQS. All fraud-detection logic — including simple rules like time-of-day — lives exclusively in the Lambda, to avoid duplicating/diverging business rules across two codebases.
-- **Every transaction is persisted**, regardless of the Lambda's verdict. The Lambda writes the transaction to DynamoDB with a `status` field (`APPROVED`, `SUSPICIOUS`, `REJECTED`). Suspicious transactions are never discarded — the history is needed for future pattern-based rules (e.g. velocity checks) and for audit purposes.
+- **The Lambda has two analysis flows.** Flow 1 (**general validation + scoring**) is async, SQS-triggered, and produces a risk score for every submitted transaction. Flow 2 (**detailed analysis**) is synchronous, called by the API via `GET /transactions/{id}/analysis`; it uses a RAG pipeline over the user's transaction history plus a large language model (LLM) to return an explainable verdict (`status`, `reasoning`, `similarCases`).
+- **Every transaction is persisted**, regardless of the Lambda's verdict. The Lambda writes the transaction to DynamoDB with a `status` field (`APPROVED`, `REJECTED`, `IN_ANALYSIS`, etc.). Suspicious transactions are never discarded — the history is needed for the RAG/similar-case lookups and for audit purposes.
 - **SNS/email is only triggered when `status = SUSPICIOUS`**, and only fires after the DynamoDB write succeeds.
 - **Idempotency and message ordering (SQS FIFO vs standard, DLQ, dedup key) are the Lambda repo's concern**, but the API must publish a stable, unique `transactionId` with every message so the Lambda can implement them.
-- **API response contract**: since processing is asynchronous, `/transaction` cannot return an approve/deny verdict synchronously. It returns `202 Accepted` with the generated `transactionId`. The retrieval mechanism is `GET /users/history/{userId}` (see below).
+- **API response contract**: since processing is asynchronous, `/transaction` cannot return an approve/deny verdict synchronously. It returns `202 Accepted` with the generated `transactionId`. Retrieval mechanisms: `GET /users/history/{userId}` (reads DynamoDB) and `GET /transactions/{id}/analysis` (invokes the Lambda synchronously for the detailed RAG+LLM result).
+- **Detailed analysis endpoint**: `GET /transactions/{id}/analysis` calls the Lambda with `InvocationType.REQUEST_RESPONSE` and a payload of only `{"transactionId": "<id>"}`. The Lambda's response is mapped to `TransactionAnalysisResponseDTO`. The function name comes from config (`aws.lambda.function-name`, default `fraud-detector-analysis-dev`), never hardcoded.
 - **User transaction history**: `GET /users/history/{userId}` returns the user (`userId`, `name`) plus all their transactions read from the **transactions table in DynamoDB**. Transactions are written only by the Lambda; the API reads them. Confirmed key schema of the transactions table (off-repo, in use; see `DescribeTable`): partition key `transactionId` (string) + **GSI `userId-occurredAt-index`** (partition `userId`, sort `occurredAt`). `TransactionRepository.findByUserId` queries that GSI — if you change this repo's assumption, confirm the schema hasn't changed off-repo first.
 
 ## Code rules and skills
@@ -82,6 +91,7 @@ com.fraud_detector.project/
 │   └── response/         # Response DTOs
 ├── enums/               # Enumerations shared across domain (Channel, PaymentMethod, etc.)
 ├── mapper/              # MapStruct interfaces (Model <-> DTO)
+├── messaging/           # Cross-repo message contracts — SQS event producer (TransactionEvent/TransactionEventPublisher) and the synchronous Lambda analysis client (TransactionAnalysisClient)
 ├── exception/           # Custom exceptions + GlobalExceptionHandler
 └── security/            # Authentication/authorization (when applicable)
 ```
@@ -91,14 +101,14 @@ the repository/project naming — don't "fix" it to `com.frauddetector.project`.
 
 ## Project conventions
 
-- **Controllers** never access `Repository` or SQS clients directly — always go through `Service`.
+- **Controllers** never access `Repository`, SQS, or Lambda clients directly — always go through `Service`.
 - **DTOs are `record`**, never reuse the DynamoDB item class (`@DynamoDbBean`) as a request/response body.
 - **Mapping**: all model↔DTO conversion happens via a MapStruct interface in `mapper/`, no manual mapping in Service.
 - **Validation** of input happens on request DTOs via Bean Validation (`@NotBlank`, `@Min`, etc.), never inside the Service.
 - **Business exceptions** must extend or be handled by `GlobalExceptionHandler` in `exception/`, always returning a standardized `ApiError`.
-- **This API does not implement fraud rules.** `/transaction` validates and publishes to SQS only — do not add time-of-day checks, velocity checks, or any suspicious-activity logic here even if it seems convenient. That logic belongs exclusively in the Lambda repo.
-- **DynamoDB table/key design**: document actual table names and partition/sort keys here once finalized (currently undecided — check with the user before assuming a schema).
-- **Profiles**: `application.yml` holds common config; `application-dev.yml` and `application-prod.yml` override per environment (e.g. local DynamoDB via LocalStack/DynamoDB Local for `dev`, real AWS resources for `prod`). AWS credentials/region and SQS queue URLs come from environment variables, never hardcoded.
+- **This API does not implement fraud rules.** `/transaction` validates and publishes to SQS only; `GET /transactions/{id}/analysis` delegates the verdict to the Lambda. Do not add time-of-day checks, velocity checks, or any suspicious-activity logic here even if it seems convenient. That logic belongs exclusively in the Lambda repo.
+- **Cross-repo communication lives in `messaging/`**: `TransactionEventPublisher` (SQS producer for async Flow 1) and `TransactionAnalysisClient` (synchronous Lambda invoker for the detailed Flow 2 analysis).
+- **Profiles**: `application.yml` holds common config; `application-dev.yml` and `application-prod.yml` override per environment (e.g. local DynamoDB/SQS/Lambda via LocalStack for `dev`, real AWS resources for `prod`). AWS credentials/region, SQS queue names, and the Lambda function name come from environment variables/config, never hardcoded.
 
 ## Adding a new feature (e.g. a new endpoint/domain)
 
@@ -110,27 +120,32 @@ Recommended order to keep things consistent:
 5. `service/EntityNameService.java` (interface) + `service/impl/EntityNameServiceImpl.java`
 6. `controller/EntityNameController.java`
 7. If the feature publishes an event (like `/transaction`), add the producer under `messaging/`
-8. Corresponding tests under `src/test/java/.../{controller,service,repository}`
+8. If the feature queries the analysis Lambda (like `/transactions/{id}/analysis`), add the client under `messaging/`
+9. Corresponding tests under `src/test/java/.../{controller,service,repository,messaging}`
 
 ## Testing
 
 - Service tests: mock `Repository` and `Mapper`, focus on request validation and orchestration (this API has no business/fraud rules to test — that's the Lambda repo's job).
 - Controller tests: use `@WebMvcTest` + `MockMvc`, mock the `Service`.
 - Repository tests: mock `DynamoDbEnhancedClient`/`DynamoDbTable`, or use DynamoDB Local/Testcontainers for lightweight integration coverage of key conditions and queries.
-- Messaging tests: mock the SQS client, verify the correct message shape/attributes are sent — never hit real AWS in unit tests.
+- Messaging tests: mock the SQS client (and the `LambdaClient` for `TransactionAnalysisClient`), verify the correct message shape/attributes are sent — never hit real AWS in unit tests.
 - Full context (`@SpringBootTest`) is not needed unless it's a genuine integration test.
 
 ## What NOT to do
 
 - Don't put business logic in `Controller`.
 - Don't expose a DynamoDB item class (`@DynamoDbBean`) directly on a REST endpoint (always go through a DTO).
-- **Don't implement fraud-detection rules in this repo** — no time-of-day checks, velocity checks, blocklist checks, or anything that decides "is this suspicious". That logic belongs exclusively to the Lambda in the separate Python repo. This API's job ends at validating input and publishing to SQS.
+- **Don't implement fraud-detection rules in this repo** — no time-of-day checks, velocity checks, blocklist checks, or anything that decides "is this suspicious". That logic belongs exclusively to the Lambda in the separate Python repo. This API's job ends at validating input, publishing to SQS, and (for the analysis endpoint) delegating the verdict to the Lambda.
 - Don't have `/transaction` write directly to the transactions table — only the Lambda persists transaction records (with their final `status`), after analysis. The API only publishes to SQS.
 - Don't commit AWS credentials, account IDs, or queue/topic ARNs in the `application-*.yml` files — use environment variables.
 
 ## Domain context (fraud-detector)
 
-Types of fraud the Lambda (separate repo) currently evaluates or plans to evaluate — kept here for API context, since the API's DTOs and SQS payload must carry whatever fields the rules need:
+The Lambda (separate repo) performs two analysis flows. These are kept here for API context, since the API's DTOs and SQS payload must carry whatever fields the rules need:
+- **Flow 1 — general validation + scoring** (async, SQS-triggered): validates the submitted objects and produces a risk score for every transaction.
+- **Flow 2 — detailed analysis** (sync, invoked by this API): RAG pipeline over the user's transaction history plus an LLM, returning an explainable verdict — `status` (`approved`, `rejected`, `in_analysis`, etc.), a `reasoning` message explaining why, and `similarCases` (similar historical transactions with a `similarity` score).
+
+Types of fraud the Lambda currently evaluates or plans to evaluate:
 - Time-of-day anomaly (e.g. transactions between 2:00–7:00 AM flagged as higher risk)
 - Velocity/pattern checks based on the user's transaction history in DynamoDB (planned)
 

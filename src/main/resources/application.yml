@@ -15,6 +15,9 @@ aws:
     endpoint: ${AWS_DYNAMODB_ENDPOINT:}
     users-table: ${AWS_DYNAMODB_USERS_TABLE:users}
     transactions-table: ${AWS_DYNAMODB_TRANSACTIONS_TABLE:transactions}
+  lambda:
+    endpoint: ${AWS_LAMBDA_ENDPOINT:}
+    function-name: ${AWS_LAMBDA_FUNCTION_NAME:fraud-detector-analysis-dev}
 
 server:
   port: 8080
