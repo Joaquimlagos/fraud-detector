@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: fraud-detector-dev
+
+aws:
+  region: us-east-1
+  access-key-id: test
+  secret-access-key: test
+  sqs:
+    endpoint: http://localhost:4566
+    queue-name: fraud-detector-transaction-queue-dev
+  dynamodb:
+    endpoint: http://localhost:4566
+    users-table: fraud-detector-users-dev
+    transactions-table: fraud-detector-transactions-dev
+  lambda:
+    endpoint: http://localhost:4566
+    function-name: fraud-detector-analysis-dev
+
+logging:
+  level:
+    com.fraud_detector.project: DEBUG
