@@ -3,6 +3,8 @@ package com.fraud_detector.project.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
 import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
+import com.fraud_detector.project.dto.response.TransactionAnalysisResponseDTO;
+import com.fraud_detector.project.dto.response.SimilarCaseDTO;
 import com.fraud_detector.project.enums.Channel;
 import com.fraud_detector.project.enums.PaymentMethod;
 import com.fraud_detector.project.service.TransactionService;
@@ -15,10 +17,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,8 +68,7 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.transactionId").value(transactionId))
-                .andExpect(jsonPath("$.status").value("PENDING_ANALYSIS"));
+                .andExpect(jsonPath("$.transactionId").value(transactionId));
     }
 
     @Test
@@ -90,5 +94,28 @@ class TransactionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnAnalysisWhenTransactionIdExists() throws Exception {
+        String transactionId = "abc-123";
+        TransactionAnalysisResponseDTO response = new TransactionAnalysisResponseDTO(
+                transactionId,
+                "suspicious",
+                "A transação apresenta padrão compatível com alta velocidade de operações.",
+                List.of(new SimilarCaseDTO("old-456", 0.92)),
+                false
+        );
+
+        when(transactionService.findAnalysis(transactionId)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/transactions/" + transactionId + "/analysis"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.transactionId").value(transactionId))
+                .andExpect(jsonPath("$.status").value("suspicious"))
+                .andExpect(jsonPath("$.reasoning").value("A transação apresenta padrão compatível com alta velocidade de operações."))
+                .andExpect(jsonPath("$.similarCases[0].transactionId").value("old-456"))
+                .andExpect(jsonPath("$.similarCases[0].similarity").value(0.92))
+                .andExpect(jsonPath("$.cached").value(false));
     }
 }

@@ -2,8 +2,11 @@ package com.fraud_detector.project.service.impl;
 
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
 import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
+import com.fraud_detector.project.dto.response.TransactionAnalysisResponseDTO;
+import com.fraud_detector.project.dto.response.SimilarCaseDTO;
 import com.fraud_detector.project.enums.Channel;
 import com.fraud_detector.project.enums.PaymentMethod;
+import com.fraud_detector.project.messaging.TransactionAnalysisClient;
 import com.fraud_detector.project.messaging.TransactionEvent;
 import com.fraud_detector.project.messaging.TransactionEventPublisher;
 import org.junit.jupiter.api.Test;
@@ -15,17 +18,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceImplTest {
 
     @Mock
     private TransactionEventPublisher publisher;
+
+    @Mock
+    private TransactionAnalysisClient analysisClient;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
@@ -76,7 +84,6 @@ class TransactionServiceImplTest {
 
         assertNotNull(response.transactionId());
         assertEquals(event.transactionId(), response.transactionId());
-        assertEquals("PENDING_ANALYSIS", response.status());
     }
 
     @Test
@@ -104,5 +111,24 @@ class TransactionServiceImplTest {
         assertNotNull(first.transactionId());
         assertNotNull(second.transactionId());
         org.junit.jupiter.api.Assertions.assertNotEquals(first.transactionId(), second.transactionId());
+    }
+
+    @Test
+    void shouldDelegateToAnalysisClientWhenFindingAnalysis() {
+        TransactionAnalysisResponseDTO expected = new TransactionAnalysisResponseDTO(
+                "abc-123",
+                "suspicious",
+                "A transação apresenta padrão compatível com alta velocidade de operações.",
+                List.of(new SimilarCaseDTO("old-456", 0.92)),
+                false
+        );
+        when(analysisClient.invokeAnalysis("abc-123")).thenReturn(expected);
+
+        TransactionAnalysisResponseDTO result = transactionService.findAnalysis("abc-123");
+
+        assertEquals(expected.transactionId(), result.transactionId());
+        assertEquals("suspicious", result.status());
+        assertEquals(1, result.similarCases().size());
+        verify(analysisClient).invokeAnalysis("abc-123");
     }
 }

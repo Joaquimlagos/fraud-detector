@@ -10,6 +10,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.net.URI;
@@ -31,6 +32,9 @@ public class AwsConfig {
 
     @Value("${aws.dynamodb.endpoint:}")
     private String dynamoDbEndpoint;
+
+    @Value("${aws.lambda.endpoint:}")
+    private String lambdaEndpoint;
 
     private AwsCredentialsProvider credentialsProvider() {
         if (accessKeyId != null && !accessKeyId.isBlank()
@@ -70,6 +74,19 @@ public class AwsConfig {
 
         if (sqsEndpoint != null && !sqsEndpoint.isBlank()) {
             builder.endpointOverride(URI.create(sqsEndpoint));
+        }
+
+        return builder.build();
+    }
+
+    @Bean
+    public LambdaClient lambdaClient() {
+        var builder = LambdaClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(credentialsProvider());
+
+        if (lambdaEndpoint != null && !lambdaEndpoint.isBlank()) {
+            builder.endpointOverride(URI.create(lambdaEndpoint));
         }
 
         return builder.build();

@@ -2,8 +2,10 @@ package com.fraud_detector.project.service.impl;
 
 import com.fraud_detector.project.dto.request.TransactionRequestDTO;
 import com.fraud_detector.project.dto.response.TransactionAcceptedResponseDTO;
+import com.fraud_detector.project.dto.response.TransactionAnalysisResponseDTO;
 import com.fraud_detector.project.enums.Channel;
 import com.fraud_detector.project.enums.PaymentMethod;
+import com.fraud_detector.project.messaging.TransactionAnalysisClient;
 import com.fraud_detector.project.messaging.TransactionEvent;
 import com.fraud_detector.project.messaging.TransactionEventPublisher;
 import com.fraud_detector.project.service.TransactionService;
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionEventPublisher publisher;
+    private final TransactionAnalysisClient analysisClient;
 
     @Override
     public TransactionAcceptedResponseDTO submit(TransactionRequestDTO dto) {
@@ -27,6 +30,11 @@ public class TransactionServiceImpl implements TransactionService {
         publisher.publish(event);
 
         return TransactionAcceptedResponseDTO.accepted(transactionId);
+    }
+
+    @Override
+    public TransactionAnalysisResponseDTO findAnalysis(String transactionId) {
+        return analysisClient.invokeAnalysis(transactionId);
     }
 
     private TransactionEvent toEvent(String transactionId, TransactionRequestDTO dto) {

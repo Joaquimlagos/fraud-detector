@@ -13,6 +13,9 @@ aws:
     endpoint: http://localhost:4566
     users-table: fraud-detector-users-dev
     transactions-table: fraud-detector-transactions-dev
+  lambda:
+    endpoint: http://localhost:4566
+    function-name: fraud-detector-analysis-dev
 
 logging:
   level:

@@ -64,6 +64,12 @@
             <artifactId>sqs</artifactId>
         </dependency>
 
+        <!-- AWS SDK v2 — Lambda (invocação de análise de fraude) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>lambda</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
